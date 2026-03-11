@@ -1,0 +1,50 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "设置 Sofabaton Hub",
+                "description": "请输入您的 Hub 的 MAC 地址和 MQTT Broker 连接信息。MQTT Broker 通常是 Home Assistant 中的 Mosquitto 插件。",
+                "data": {
+                    "mac": "MAC 地址 (例如: AABBCCDDEEFF)",
+                    "name": "Hub 名称",
+                    "host": "MQTT Broker IP 地址 (例如: localhost 或 192.168.1.100)",
+                    "port": "MQTT Broker 端口 (默认: 1883)",
+                    "username": "MQTT Broker 用户名 (可选)",
+                    "password": "MQTT Broker 密码 (可选)"
+                },
+                "data_description": {
+                    "host": "MQTT Broker 的 IP 地址或主机名（如果使用 Mosquitto 插件，通常填写 'localhost'）",
+                    "port": "MQTT Broker 的端口号（默认为 1883）",
+                    "username": "MQTT Broker 的认证用户名（如果不需要认证可留空）",
+                    "password": "MQTT Broker 的认证密码（如果不需要认证可留空）"
+                }
+            },
+            "zeroconf_confirm": {
+                "title": "发现 Sofabaton Hub: {name}",
+                "description": "在您的网络上发现了一个 Sofabaton Hub。请输入您的 MQTT Broker 连接信息以完成设置。MQTT Broker 通常是 Home Assistant 中的 Mosquitto 插件。",
+                "data": {
+                    "host": "MQTT Broker IP 地址 (例如: localhost 或 192.168.1.100)",
+                    "port": "MQTT Broker 端口 (默认: 1883)",
+                    "username": "MQTT Broker 用户名 (可选)",
+                    "password": "MQTT Broker 密码 (可选)"
+                },
+                "data_description": {
+                    "host": "MQTT Broker 的 IP 地址或主机名（如果使用 Mosquitto 插件，通常填写 'localhost'）",
+                    "port": "MQTT Broker 的端口号（默认为 1883）",
+                    "username": "MQTT Broker 的认证用户名（如果不需要认证可留空）",
+                    "password": "MQTT Broker 的认证密码（如果不需要认证可留空）"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "无法连接到 MQTT Broker。请检查 MQTT 集成是否已配置并连接。",
+            "invalid_auth": "MQTT Broker 认证凭据无效。",
+            "invalid_mac": "无效的 MAC 地址格式。应为12位十六进制字符，无分隔符。",
+            "unknown": "发生意外错误。请查看日志以获取更多信息。"
+        },
+        "abort": {
+            "already_configured": "此 Sofabaton Hub 已配置。",
+            "no_mac_address": "在发现信息中未找到 MAC 地址。"
+        }
+    }
+}

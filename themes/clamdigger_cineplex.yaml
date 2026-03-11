@@ -1,0 +1,28 @@
+Clamdigger Cineplex:
+  modes:
+    light:
+      primary-color: "#d5b46f"
+      secondary-color: "#d5b46f"
+      accent-color: "#d5b46f"
+      card-background-color: "#0d0d0d"
+      primary-background-color: "#000000"
+      secondary-background-color: "#000000"
+      app-header-background-color: "#000000"
+      disabled-text-color: "#7a6b50"
+      sidebar-icon-color: "#d5b46f"
+      sidebar-text-color: "#d5b46f"
+      text-primary-color: "#d5b46f"
+      text-light-primary-color: "#d5b46f"
+    dark:
+      primary-color: "#d5b46f"
+      secondary-color: "#d5b46f"
+      accent-color: "#d5b46f"
+      card-background-color: "#0d0d0d"
+      primary-background-color: "#000000"
+      secondary-background-color: "#000000"
+      app-header-background-color: "#000000"
+      disabled-text-color: "#7a6b50"
+      sidebar-icon-color: "#d5b46f"
+      sidebar-text-color: "#d5b46f"
+      text-primary-color: "#d5b46f"
+      text-light-primary-color: "#d5b46f"

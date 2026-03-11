@@ -1,0 +1,55 @@
+- id: '1769196485065'
+  alias: Doorbell - Unified Multi-Chime Control
+  description: Sets chimes to citybird for Backdoor or hophop for Frontdoor, then
+    rings all four.
+  triggers:
+  - device_id: 9031a29eec68072aec4012b4e080f246
+    domain: binary_sensor
+    entity_id: 1b6f9e35b0c81b35fe32a570c23b166c
+    type: turned_on
+    id: back_door_pressed
+    trigger: device
+  - device_id: 7d034a9cc0a233184da880c082a11969
+    domain: binary_sensor
+    entity_id: d9ac04deb3f5a823c7a02fce3293577d
+    type: turned_on
+    id: front_door_pressed
+    trigger: device
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: back_door_pressed
+      sequence:
+      - action: select.select_option
+        target:
+          entity_id:
+          - 1ffc6c8406e8af58fc6b7e07028e0b52
+          - bb7c40f8856967a61e1ca6c31f624128
+          - 4c5e1bf1b6ac32178272f8d575f3d7f7
+          - 1534ca391ebc1685b935e4f4994a869d
+        data:
+          option: citybird
+    - conditions:
+      - condition: trigger
+        id: front_door_pressed
+      sequence:
+      - action: select.select_option
+        target:
+          entity_id:
+          - 1ffc6c8406e8af58fc6b7e07028e0b52
+          - bb7c40f8856967a61e1ca6c31f624128
+          - 4c5e1bf1b6ac32178272f8d575f3d7f7
+          - 1534ca391ebc1685b935e4f4994a869d
+        data:
+          option: hophop
+  - delay:
+      milliseconds: 800
+  - action: reolink.play_chime
+    data:
+      device_id:
+      - 0e6c25a3b779221e29ef378ffb59bbe3
+      - cf2428166cd9251a7b16120f019a4873
+      - aea09dbf0d4193fa160a68a079638950
+      - 6130187660a8594d32f8541bb6b4575f
+  mode: restart

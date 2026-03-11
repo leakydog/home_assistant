@@ -1,0 +1,20 @@
+dionysus_reboot_system_kodi_json_rpc:
+  sequence:
+  - action: kodi.call_method
+    metadata: {}
+    data:
+      method: System.Reboot
+    target:
+      entity_id: media_player.dionysus_kodi
+  alias: Dionysus – Reboot System (Kodi JSON-RPC)
+  description: ''
+dionysus_shutdown_system_kodi_json_rpc:
+  sequence:
+  - action: kodi.call_method
+    metadata: {}
+    data:
+      method: System.Shutdown
+    target:
+      entity_id: media_player.dionysus_kodi
+  alias: Dionysus – Shutdown System (Kodi JSON-RPC)
+  description: ''
