@@ -13,3 +13,9 @@ http:
   use_x_forwarded_for: true
   trusted_proxies:
     - 192.168.30.15    # The IP of your Nginx Proxy Manager
+
+lovelace:
+  mode: yaml
+  resources:
+    - url: /local/community/lovelace-card-mod/card-mod.js
+      type: module
