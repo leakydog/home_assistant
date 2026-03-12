@@ -53,3 +53,23 @@
       - aea09dbf0d4193fa160a68a079638950
       - 6130187660a8594d32f8541bb6b4575f
   mode: restart
+- id: 'dog_barking_let_jelly_in'
+  alias: "Dog Barking - Let Jelly In"
+  triggers:
+    - trigger: state
+      entity_id:
+        - binary_sensor.back_door_bark_sound
+        - binary_sensor.front_door_bark_sound
+      to: "on"
+  conditions:
+    - condition: template
+      value_template: "{{ now().hour >= 7 and now().hour < 22 }}"
+  actions:
+    - action: tts.google_translate_say
+      data:
+        entity_id:
+          - media_player.living_room_speaker
+          - media_player.chris_room_speaker
+          - media_player.bathroom_speaker
+        message: "Chris and Callie, please let Jelly in"
+  mode: single
