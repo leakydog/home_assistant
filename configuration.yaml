@@ -16,6 +16,33 @@ http:
 
 lovelace:
   mode: yaml
-  resources:
-    - url: /local/community/lovelace-card-mod/card-mod.js
-      type: module
+input_select:
+  presence_jackie:
+    name: Jackie
+    options:
+      - Home
+      - Not Home
+      - "Timeout (Home)"
+      - "Timeout (Not Home)"
+    initial: "Not Home"
+    icon: mdi:account
+
+  presence_chris:
+    name: Chris
+    options:
+      - Home
+      - Not Home
+      - "Timeout (Home)"
+      - "Timeout (Not Home)"
+    initial: "Not Home"
+    icon: mdi:account
+
+  presence_callie:
+    name: Callie
+    options:
+      - Home
+      - Not Home
+      - "Timeout (Home)"
+      - "Timeout (Not Home)"
+    initial: "Not Home"
+    icon: mdi:account
