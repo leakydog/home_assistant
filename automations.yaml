@@ -3,18 +3,14 @@
   description: Sets chimes to citybird for Backdoor or hophop for Frontdoor, then
     rings all four.
   triggers:
-  - device_id: 9031a29eec68072aec4012b4e080f246
-    domain: binary_sensor
-    entity_id: 1b6f9e35b0c81b35fe32a570c23b166c
-    type: turned_on
+  - trigger: state
+    entity_id: binary_sensor.back_door_visitor
+    to: 'on'
     id: back_door_pressed
-    trigger: device
-  - device_id: 7d034a9cc0a233184da880c082a11969
-    domain: binary_sensor
-    entity_id: d9ac04deb3f5a823c7a02fce3293577d
-    type: turned_on
+  - trigger: state
+    entity_id: binary_sensor.front_door_visitor
+    to: 'on'
     id: front_door_pressed
-    trigger: device
   actions:
   - choose:
     - conditions:
@@ -24,10 +20,10 @@
       - action: select.select_option
         target:
           entity_id:
-          - 1ffc6c8406e8af58fc6b7e07028e0b52
-          - bb7c40f8856967a61e1ca6c31f624128
-          - 4c5e1bf1b6ac32178272f8d575f3d7f7
-          - 1534ca391ebc1685b935e4f4994a869d
+          - select.reolink_chime_visitor_ringtone
+          - select.reolink_chime_livingroom_visitor_ringtone
+          - select.reolink_chime_office_visitor_ringtone
+          - select.reolink_chime_theatre_visitor_ringtone
         data:
           option: citybird
     - conditions:
@@ -37,10 +33,10 @@
       - action: select.select_option
         target:
           entity_id:
-          - 1ffc6c8406e8af58fc6b7e07028e0b52
-          - bb7c40f8856967a61e1ca6c31f624128
-          - 4c5e1bf1b6ac32178272f8d575f3d7f7
-          - 1534ca391ebc1685b935e4f4994a869d
+          - select.reolink_chime_visitor_ringtone
+          - select.reolink_chime_livingroom_visitor_ringtone
+          - select.reolink_chime_office_visitor_ringtone
+          - select.reolink_chime_theatre_visitor_ringtone
         data:
           option: hophop
   - delay:
@@ -49,27 +45,782 @@
     data:
       device_id:
       - 0e6c25a3b779221e29ef378ffb59bbe3
-      - cf2428166cd9251a7b16120f019a4873
-      - aea09dbf0d4193fa160a68a079638950
       - 6130187660a8594d32f8541bb6b4575f
+      - d31b9c5d2e4808a8a4b615f82eb1a7aa
+      - 2acc59745f64740a0dcc0013ea902ca5
   mode: restart
-- id: 'dog_barking_let_jelly_in'
-  alias: "Dog Barking - Let Jelly In"
+- id: dog_barking_let_jelly_in
+  alias: Dog Barking - Let Jelly In
   triggers:
-    - trigger: state
-      entity_id:
-        - binary_sensor.back_door_bark_sound
-        - binary_sensor.front_door_bark_sound
-      to: "on"
+  - trigger: state
+    entity_id:
+    - binary_sensor.back_door_bark_sound
+    - binary_sensor.front_door_bark_sound
+    to: 'on'
   conditions:
-    - condition: template
-      value_template: "{{ now().hour >= 7 and now().hour < 22 }}"
+  - condition: template
+    value_template: '{{ now().hour >= 7 and now().hour < 22 }}'
   actions:
-    - action: tts.google_translate_say
-      data:
-        entity_id:
-          - media_player.living_room_speaker
-          - media_player.chris_room_speaker
-          - media_player.bathroom_speaker
-        message: "Chris and Callie, please let Jelly in"
+  - action: tts.google_translate_say
+    data:
+      entity_id:
+      - media_player.living_room_speaker
+      - media_player.chris_room_speaker
+      - media_player.bathroom_speaker
+      message: Chris and Callie, please let Jelly in
+  mode: single
+- id: '1773362009613'
+  alias: Epson Power Off
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":2}'
+    trigger: mqtt
+  actions:
+  - target:
+      entity_id: remote.epson_projector
+    action: remote.turn_off
+- id: '1773365570942'
+  alias: Epson Power On
+  description: ''
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":1}'
+    trigger: mqtt
+  actions:
+  - target:
+      entity_id: remote.epson_projector
+    action: remote.turn_on
+- id: facial_recognition_eddie_home
+  alias: Presence - Eddie Arrived Home
+  description: Plays muted jazz on living room speaker when Eddie is recognized at
+    either door
+  triggers:
+  - trigger: state
+    entity_id: sensor.front_door_last_recognized_face
+    to: Eddie Ciarletta
+  - trigger: state
+    entity_id: sensor.back_door_last_recognized_face
+    to: Eddie Ciarletta
+  conditions:
+  - condition: template
+    value_template: '{{ now().hour >= 7 and now().hour < 23 }}'
+  actions:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.living_room_speaker
+    data:
+      volume_level: 0.2
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.living_room_speaker
+    data:
+      media_content_id: muted jazz
+      media_content_type: music
+      extra:
+        enqueue: play
+  mode: single
+- id: new_oceanus_cerberus_health
+  alias: Oceanus + Cerberus Health Alerts
+  description: Alerts Eddie when NAS drives fail, volume is critical, or UPS goes
+    critical
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.oceanus_drive_1_exceeded_max_bad_sectors
+    - binary_sensor.oceanus_drive_2_exceeded_max_bad_sectors
+    - binary_sensor.oceanus_drive_3_exceeded_max_bad_sectors
+    - binary_sensor.oceanus_drive_4_exceeded_max_bad_sectors
+    - binary_sensor.oceanus_drive_5_exceeded_max_bad_sectors
+    - binary_sensor.oceanus_drive_6_exceeded_max_bad_sectors
+    to: 'on'
+    id: drive_bad_sectors
+  - trigger: state
+    entity_id:
+    - binary_sensor.oceanus_drive_1_below_min_remaining_life
+    - binary_sensor.oceanus_drive_2_below_min_remaining_life
+    - binary_sensor.oceanus_drive_3_below_min_remaining_life
+    - binary_sensor.oceanus_drive_4_below_min_remaining_life
+    - binary_sensor.oceanus_drive_5_below_min_remaining_life
+    to: 'on'
+    id: drive_life
+  - trigger: state
+    entity_id: sensor.oceanus_volume_2_status
+    to: attention
+    id: volume_attention
+  - trigger: numeric_state
+    entity_id: sensor.oceanus_volume_2_volume_used
+    above: 90
+    id: volume_full
+  - trigger: state
+    entity_id: binary_sensor.cerberus_ups_online_status
+    to: 'off'
+    id: ups_offline
+  - trigger: numeric_state
+    entity_id: sensor.cerberus_ups_battery
+    below: 30
+    id: ups_battery_low
+  - trigger: numeric_state
+    entity_id: sensor.cerberus_ups_time_left
+    below: 3
+    id: ups_runtime_low
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: drive_bad_sectors
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "\U0001F6A8 Oceanus Drive Alert"
+          message: A drive has exceeded max bad sectors! Check Oceanus DSM immediately.
+          data:
+            priority: high
+            ttl: 0
+    - conditions:
+      - condition: trigger
+        id: drive_life
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: ⚠️ Oceanus Drive Life Warning
+          message: A drive is below minimum remaining life. Plan replacement soon.
+          data:
+            priority: high
+    - conditions:
+      - condition: trigger
+        id: volume_attention
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: ⚠️ Oceanus Volume Attention
+          message: Oceanus Volume 2 needs attention. Check DSM storage manager.
+          data:
+            priority: high
+    - conditions:
+      - condition: trigger
+        id: volume_full
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "\U0001F4BE Oceanus Almost Full"
+          message: Oceanus Volume 2 is over 90% full. Time to free up space.
+          data:
+            priority: high
+    - conditions:
+      - condition: trigger
+        id: ups_offline
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "\U0001F50B Cerberus UPS OFFLINE"
+          message: UPS has gone offline — on battery or UPS failed!
+          data:
+            priority: high
+            ttl: 0
+    - conditions:
+      - condition: trigger
+        id: ups_battery_low
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "\U0001F50B Cerberus UPS Battery Low"
+          message: UPS battery below 30%. Check runtime immediately.
+          data:
+            priority: high
+            ttl: 0
+    - conditions:
+      - condition: trigger
+        id: ups_runtime_low
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: ⚡ UPS Runtime Critical
+          message: Under 3 minutes of UPS runtime! Battery may need replacement (last
+            replaced 2019).
+          data:
+            priority: high
+            ttl: 0
+  mode: parallel
+- id: facial_recognition_jackie_ciarletta_home
+  alias: Presence - Jackie Door Detection
+  description: >
+    Toggle presence on Frigate detection. Home/Timeout(Home) -> Not Home.
+    Not Home/Timeout(Not Home) -> Home. 4hr timeout resets to Timeout state.
+  triggers:
+  - trigger: state
+    entity_id: sensor.front_door_last_recognized_face
+    to: Jackie Ciarletta
+  - trigger: state
+    entity_id: sensor.back_door_last_recognized_face
+    to: Jackie Ciarletta
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_jackie
+        state:
+          - Home
+          - "Timeout (Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "👋 See you later!"
+          message: "Jackie left 👋"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_jackie
+        data:
+          option: Not Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_jackie
+        state: Not Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_jackie
+        data:
+          option: "Timeout (Not Home)"
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_jackie
+        state:
+          - Not Home
+          - "Timeout (Not Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "👋 Welcome Home!"
+          message: "Jackie is home 💕"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_jackie
+        data:
+          option: Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_jackie
+        state: Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_jackie
+        data:
+          option: "Timeout (Home)"
+  mode: restart
+
+- id: facial_recognition_chris_ciarletta_home
+  alias: Presence - Chris Door Detection
+  description: >
+    Toggle presence on Frigate detection. Home/Timeout(Home) -> Not Home.
+    Not Home/Timeout(Not Home) -> Home. 4hr timeout resets to Timeout state.
+  triggers:
+  - trigger: state
+    entity_id: sensor.front_door_last_recognized_face
+    to: Chris Ciarletta
+  - trigger: state
+    entity_id: sensor.back_door_last_recognized_face
+    to: Chris Ciarletta
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_chris
+        state:
+          - Home
+          - "Timeout (Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "🎮 See you later!"
+          message: "Chris left 🎮"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_chris
+        data:
+          option: Not Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_chris
+        state: Not Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_chris
+        data:
+          option: "Timeout (Not Home)"
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_chris
+        state:
+          - Not Home
+          - "Timeout (Not Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "🎮 Welcome Home!"
+          message: "Chris is home! 🎮"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_chris
+        data:
+          option: Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_chris
+        state: Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_chris
+        data:
+          option: "Timeout (Home)"
+  mode: restart
+
+- id: facial_recognition_callie_ciarletta_home
+  alias: Presence - Callie Door Detection
+  description: >
+    Toggle presence on Frigate detection. Home/Timeout(Home) -> Not Home.
+    Not Home/Timeout(Not Home) -> Home. 4hr timeout resets to Timeout state.
+  triggers:
+  - trigger: state
+    entity_id: sensor.front_door_last_recognized_face
+    to: Callie Ciarletta
+  - trigger: state
+    entity_id: sensor.back_door_last_recognized_face
+    to: Callie Ciarletta
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_callie
+        state:
+          - Home
+          - "Timeout (Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "🐊 See you later!"
+          message: "Callie left 🐊"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_callie
+        data:
+          option: Not Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_callie
+        state: Not Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_callie
+        data:
+          option: "Timeout (Not Home)"
+    - conditions:
+      - condition: state
+        entity_id: input_select.presence_callie
+        state:
+          - Not Home
+          - "Timeout (Not Home)"
+      sequence:
+      - action: notify.mobile_app_pixel_7_pro
+        data:
+          title: "🐊 Welcome Home!"
+          message: "Callie is home! 🐊"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_callie
+        data:
+          option: Home
+      - delay:
+          hours: 4
+      - condition: state
+        entity_id: input_select.presence_callie
+        state: Home
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.presence_callie
+        data:
+          option: "Timeout (Home)"
+  mode: restart
+
+- id: 'basement_unified_lighting_control'
+  alias: Basement – Unified Lighting Control
+  description: >
+    All 4 smart lights unified. Occupancy + lux <10 → all on at 100% 4000K.
+    All clear 1 min → all off. Lux >10 + no occupancy → all off.
+    Projector on: SmartLight-1 → red 20% (ignores lux/occupancy).
+    SmartLights 2/3/4 stay in normal occupancy mode while projector on.
+    Projector off: restore all 4 to occupancy mode.
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.smartlight_1_occupancy
+    id: occupancy_change
+  - trigger: state
+    entity_id: binary_sensor.smart_night_light_w_occupancy
+    id: occupancy_change
+  - trigger: state
+    entity_id: binary_sensor.smartlight_3_occupancy
+    id: occupancy_change
+  - trigger: state
+    entity_id: binary_sensor.smartlight_4_occupancy
+    id: occupancy_change
+  - trigger: state
+    entity_id: media_player.epson_projector
+    to: 'on'
+    id: projector_on
+  - trigger: state
+    entity_id: remote.epson_projector
+    to: 'on'
+    id: projector_on
+  - trigger: state
+    entity_id: media_player.epson_projector
+    to: 'off'
+    id: projector_off
+  - trigger: state
+    entity_id: remote.epson_projector
+    to: 'off'
+    id: projector_off
+
+  actions:
+  - delay:
+      seconds: 2
+  - choose:
+    # ── PROJECTOR ON → SmartLight-1 red 20%, lights 2/3/4 follow occupancy
+    - conditions:
+      - condition: trigger
+        id: projector_on
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.smartlight_1
+        data:
+          brightness_pct: 20
+          color_name: red
+      - choose:
+        - conditions:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: binary_sensor.smart_night_light_w_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_3_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_4_occupancy
+              state: 'on'
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: 4000
+        default:
+        - action: light.turn_off
+          target:
+            entity_id:
+            - light.smart_night_light_w
+            - light.smartlight_3
+            - light.smartlight_4
+
+    # ── PROJECTOR OFF → restore all 4 to occupancy mode
+    - conditions:
+      - condition: trigger
+        id: projector_off
+      sequence:
+      - choose:
+        # If anyone is home and it's dark → turn all 4 on
+        - conditions:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: binary_sensor.smartlight_1_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smart_night_light_w_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_3_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_4_occupancy
+              state: 'on'
+          - condition: or
+            conditions:
+            - condition: numeric_state
+              entity_id: sensor.smartlight_1_illuminance
+              below: 10
+            - condition: numeric_state
+              entity_id: sensor.smart_night_light_w_illuminance
+              below: 10
+            - condition: numeric_state
+              entity_id: sensor.smartlight_3_illuminance
+              below: 10
+            - condition: numeric_state
+              entity_id: sensor.smartlight_4_illuminance
+              below: 10
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.smartlight_1
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: 4000
+        # Otherwise turn all off
+        default:
+        - action: light.turn_off
+          target:
+            entity_id:
+            - light.smartlight_1
+            - light.smart_night_light_w
+            - light.smartlight_3
+            - light.smartlight_4
+
+    # ── OCCUPANCY CHANGE (projector off/unavailable/standby) → evaluate all sensors
+    - conditions:
+      - condition: trigger
+        id: occupancy_change
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: media_player.epson_projector
+          state: 'on'
+      sequence:
+      - choose:
+        # Any sensor on → turn all 4 on (no lux check)
+        - conditions:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: binary_sensor.smartlight_1_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smart_night_light_w_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_3_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_4_occupancy
+              state: 'on'
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.smartlight_1
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: 4000
+        # All sensors off → wait 1 min then check again → turn all off
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.smartlight_1_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smart_night_light_w_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_3_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_4_occupancy
+            state: 'off'
+          sequence:
+          - delay:
+              minutes: 1
+          - condition: state
+            entity_id: binary_sensor.smartlight_1_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smart_night_light_w_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_3_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_4_occupancy
+            state: 'off'
+          sequence:
+          - action: light.turn_off
+            target:
+              entity_id:
+              - light.smartlight_1
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+
+    # ── OCCUPANCY CHANGE (projector ON) → lights 2/3/4 follow occupancy, leave 1 in cinema mode
+    - conditions:
+      - condition: trigger
+        id: occupancy_change
+      - condition: state
+        entity_id: media_player.epson_projector
+        state: 'on'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: binary_sensor.smart_night_light_w_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_3_occupancy
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.smartlight_4_occupancy
+              state: 'on'
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: 4000
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.smart_night_light_w_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_3_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_4_occupancy
+            state: 'off'
+          sequence:
+          - delay:
+              minutes: 1
+          - condition: state
+            entity_id: binary_sensor.smart_night_light_w_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_3_occupancy
+            state: 'off'
+          - condition: state
+            entity_id: binary_sensor.smartlight_4_occupancy
+            state: 'off'
+          - action: light.turn_off
+            target:
+              entity_id:
+              - light.smart_night_light_w
+              - light.smartlight_3
+              - light.smartlight_4
+  mode: restart
+
+- id: 'sofabaton_plex'
+  alias: Sofabaton – Launch Plex
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":3}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: Plex
+  mode: single
+
+- id: 'sofabaton_livetv'
+  alias: Sofabaton – Launch Gamma IPTV
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":4}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: com.gamma.iptv.player
+  mode: single
+
+- id: 'sofabaton_music'
+  alias: Sofabaton – Launch YouTube Music
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":5}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: com.google.android.apps.youtube.music
+  mode: single
+
+- id: 'sofabaton_emulator'
+  alias: Sofabaton – Launch Dashijio
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":6}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: com.magneticchen.daijishou
+  mode: single
+
+- id: 'sofabaton_moonlight'
+  alias: Sofabaton – Launch Moonlight
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":7}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: com.limelight
+  mode: single
+
+- id: 'sofabaton_youtube'
+  alias: Sofabaton – Launch YouTube
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":8}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: YouTube
+  mode: single
+
+- id: 'sofabaton_kodi'
+  alias: Sofabaton – Launch Kodi
+  triggers:
+  - topic: FC012C38C6E4/up
+    payload: '{"device_id":3,"key_id":9}'
+    trigger: mqtt
+  actions:
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.android_tv_192_168_40_187
+    data:
+      source: Kodi
   mode: single
