@@ -51,23 +51,34 @@
   mode: restart
 - id: dog_barking_let_jelly_in
   alias: Dog Barking - Let Jelly In
+  description: >
+    When Frigate detects sustained barking at either door during waking hours
+    (7am-8pm), announce over multiple speakers asking Chris/Callie to let Jelly
+    in. 3-second trigger debounce filters false blips; 3-minute cooldown
+    prevents announcement spam while Jelly is still outside barking.
   triggers:
   - trigger: state
     entity_id:
     - binary_sensor.back_door_bark_sound
     - binary_sensor.front_door_bark_sound
     to: 'on'
+    for: '00:00:03'
   conditions:
-  - condition: template
-    value_template: '{{ now().hour >= 7 and now().hour < 22 }}'
+  - condition: time
+    after: '07:00:00'
+    before: '20:00:00'
   actions:
-  - action: tts.google_translate_say
+  - action: tts.speak
+    target:
+      entity_id: tts.google_translate_en_com
     data:
-      entity_id:
+      media_player_entity_id:
       - media_player.living_room_speaker
       - media_player.chris_room_speaker
       - media_player.bathroom_speaker
       message: Chris and Callie, please let Jelly in
+  # 3-minute cooldown: mode: single blocks re-entry while the delay is running.
+  - delay: '00:03:00'
   mode: single
 - id: '1773362009613'
   alias: Epson Power Off
@@ -92,8 +103,13 @@
     action: remote.turn_on
 - id: facial_recognition_eddie_home
   alias: Presence - Eddie Arrived Home
-  description: Plays muted jazz on living room speaker when Eddie is recognized at
-    either door
+  description: >
+    Plays a low-volume jazz radio stream on the living room speaker when
+    Eddie is recognized at either door. Uses SomaFM Groove Salad (ambient/
+    downtempo jazz, royalty-free streaming). The old automation had
+    `media_content_id: muted jazz` which was a human label, not a valid
+    Cast media id — silently failed since install. Fixed 2026-04-09.
+    See ideas/2026-04-09-eddie-welcome-music.md for the research.
   triggers:
   - trigger: state
     entity_id: sensor.front_door_last_recognized_face
@@ -102,8 +118,14 @@
     entity_id: sensor.back_door_last_recognized_face
     to: Eddie Ciarletta
   conditions:
-  - condition: template
-    value_template: '{{ now().hour >= 7 and now().hour < 23 }}'
+  - condition: time
+    after: '07:00:00'
+    before: '23:00:00'
+  - condition: state
+    entity_id: media_player.living_room_speaker
+    state:
+    - 'off'
+    - 'idle'
   actions:
   - action: media_player.volume_set
     target:
@@ -114,10 +136,8 @@
     target:
       entity_id: media_player.living_room_speaker
     data:
-      media_content_id: muted jazz
+      media_content_id: https://ice2.somafm.com/groovesalad-256-mp3
       media_content_type: music
-      extra:
-        enqueue: play
   mode: single
 - id: new_oceanus_cerberus_health
   alias: Oceanus + Cerberus Health Alerts
@@ -170,7 +190,7 @@
       - condition: trigger
         id: drive_bad_sectors
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "\U0001F6A8 Oceanus Drive Alert"
           message: A drive has exceeded max bad sectors! Check Oceanus DSM immediately.
@@ -181,7 +201,7 @@
       - condition: trigger
         id: drive_life
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: ⚠️ Oceanus Drive Life Warning
           message: A drive is below minimum remaining life. Plan replacement soon.
@@ -191,7 +211,7 @@
       - condition: trigger
         id: volume_attention
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: ⚠️ Oceanus Volume Attention
           message: Oceanus Volume 2 needs attention. Check DSM storage manager.
@@ -201,7 +221,7 @@
       - condition: trigger
         id: volume_full
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "\U0001F4BE Oceanus Almost Full"
           message: Oceanus Volume 2 is over 90% full. Time to free up space.
@@ -211,7 +231,7 @@
       - condition: trigger
         id: ups_offline
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "\U0001F50B Cerberus UPS OFFLINE"
           message: UPS has gone offline — on battery or UPS failed!
@@ -222,7 +242,7 @@
       - condition: trigger
         id: ups_battery_low
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "\U0001F50B Cerberus UPS Battery Low"
           message: UPS battery below 30%. Check runtime immediately.
@@ -233,7 +253,7 @@
       - condition: trigger
         id: ups_runtime_low
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: ⚡ UPS Runtime Critical
           message: Under 3 minutes of UPS runtime! Battery may need replacement (last
@@ -242,74 +262,50 @@
             priority: high
             ttl: 0
   mode: parallel
-- id: facial_recognition_jackie_ciarletta_home
-  alias: Presence - Jackie Door Detection
+# Jackie's presence is now driven by person.jackie_ciarletta (phone device trackers:
+# device_tracker.jaxxx_cell, device_tracker.iphone_7). The Frigate door-detection
+# automation has been removed in favor of native phone-based home/away.
+- id: presence_jackie_arrived_home
+  alias: Presence - Jackie Arrived Home
   description: >
-    Toggle presence on Frigate detection. Home/Timeout(Home) -> Not Home.
-    Not Home/Timeout(Not Home) -> Home. 4hr timeout resets to Timeout state.
+    Notify Eddie when Jackie's phone transitions to home. Suppressed when
+    Eddie is already home — no point pinging him about someone he can see.
   triggers:
   - trigger: state
-    entity_id: sensor.front_door_last_recognized_face
-    to: Jackie Ciarletta
-  - trigger: state
-    entity_id: sensor.back_door_last_recognized_face
-    to: Jackie Ciarletta
-  conditions: []
+    entity_id: person.jackie_ciarletta
+    from: not_home
+    to: home
+  conditions:
+  - condition: state
+    entity_id: person.edward_ciarletta
+    state: not_home
   actions:
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_select.presence_jackie
-        state:
-          - Home
-          - "Timeout (Home)"
-      sequence:
-      - action: notify.mobile_app_pixel_7_pro
-        data:
-          title: "👋 See you later!"
-          message: "Jackie left 👋"
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.presence_jackie
-        data:
-          option: Not Home
-      - delay:
-          hours: 4
-      - condition: state
-        entity_id: input_select.presence_jackie
-        state: Not Home
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.presence_jackie
-        data:
-          option: "Timeout (Not Home)"
-    - conditions:
-      - condition: state
-        entity_id: input_select.presence_jackie
-        state:
-          - Not Home
-          - "Timeout (Not Home)"
-      sequence:
-      - action: notify.mobile_app_pixel_7_pro
-        data:
-          title: "👋 Welcome Home!"
-          message: "Jackie is home 💕"
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.presence_jackie
-        data:
-          option: Home
-      - delay:
-          hours: 4
-      - condition: state
-        entity_id: input_select.presence_jackie
-        state: Home
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.presence_jackie
-        data:
-          option: "Timeout (Home)"
-  mode: restart
+  - action: notify.mobile_app_pixel_8_pro
+    data:
+      title: "👋 Welcome Home!"
+      message: "Jackie is home 💕"
+  mode: single
+
+- id: presence_jackie_left_home
+  alias: Presence - Jackie Left Home
+  description: >
+    Notify Eddie when Jackie's phone transitions away from home. Suppressed
+    when Eddie is already home — no point pinging him about someone he can see.
+  triggers:
+  - trigger: state
+    entity_id: person.jackie_ciarletta
+    from: home
+    to: not_home
+  conditions:
+  - condition: state
+    entity_id: person.edward_ciarletta
+    state: not_home
+  actions:
+  - action: notify.mobile_app_pixel_8_pro
+    data:
+      title: "👋 See you later!"
+      message: "Jackie left 👋"
+  mode: single
 
 - id: facial_recognition_chris_ciarletta_home
   alias: Presence - Chris Door Detection
@@ -333,7 +329,7 @@
           - Home
           - "Timeout (Home)"
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "🎮 See you later!"
           message: "Chris left 🎮"
@@ -359,7 +355,7 @@
           - Not Home
           - "Timeout (Not Home)"
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "🎮 Welcome Home!"
           message: "Chris is home! 🎮"
@@ -402,7 +398,7 @@
           - Home
           - "Timeout (Home)"
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "🐊 See you later!"
           message: "Callie left 🐊"
@@ -428,7 +424,7 @@
           - Not Home
           - "Timeout (Not Home)"
       sequence:
-      - action: notify.mobile_app_pixel_7_pro
+      - action: notify.mobile_app_pixel_8_pro
         data:
           title: "🐊 Welcome Home!"
           message: "Callie is home! 🐊"
@@ -470,20 +466,16 @@
   - trigger: state
     entity_id: binary_sensor.smartlight_4_occupancy
     id: occupancy_change
+  # media_player.epson_projector is the canonical source of projector state.
+  # remote.epson_projector was previously a duplicate trigger here — removed
+  # 2026-04-09 to avoid double-firing. The remote entity is still used for
+  # power on/off in the Sofabaton automations (lines 83-103).
   - trigger: state
     entity_id: media_player.epson_projector
     to: 'on'
     id: projector_on
   - trigger: state
-    entity_id: remote.epson_projector
-    to: 'on'
-    id: projector_on
-  - trigger: state
     entity_id: media_player.epson_projector
-    to: 'off'
-    id: projector_off
-  - trigger: state
-    entity_id: remote.epson_projector
     to: 'off'
     id: projector_off
 
@@ -628,7 +620,12 @@
             data:
               brightness_pct: 100
               color_temp_kelvin: 4000
-        # All sensors off → wait 1 min then check again → turn all off
+        # All sensors off → wait 1 min then check again → turn all off.
+        # NOTE: this branch previously had a duplicate `sequence:` key inside
+        # the same choose item. YAML accepted it but the second key clobbered
+        # the first, silently dropping the delay + recheck and turning lights
+        # off the instant any sensor flickered. Fixed 2026-04-09 by collapsing
+        # into a single sequence with the delay, recheck, then the off action.
         - conditions:
           - condition: state
             entity_id: binary_sensor.smartlight_1_occupancy
@@ -657,7 +654,6 @@
           - condition: state
             entity_id: binary_sensor.smartlight_4_occupancy
             state: 'off'
-          sequence:
           - action: light.turn_off
             target:
               entity_id:
@@ -823,4 +819,37 @@
       entity_id: media_player.android_tv_192_168_40_187
     data:
       source: Kodi
+  mode: single
+
+# ──────────────────────────────────────────────────────────────────────────
+# Kids dashboard bedtime gate (added 2026-04-09 — see /clamlings dashboard)
+# Toggles input_boolean.kids_bedtime ON at 20:30 and OFF at 06:00 every day.
+# Streaming-app picture buttons on the dashboard hide via card visibility
+# conditions when this is ON; d-pad / volume / power / find-remote stay
+# active so they can finish what's playing.
+# ──────────────────────────────────────────────────────────────────────────
+- id: kids_bedtime_on
+  alias: Kids - Bedtime ON (gray out streaming apps)
+  description: Turns on input_boolean.kids_bedtime at 20:30 every day
+  triggers:
+  - trigger: time
+    at: "20:30:00"
+  conditions: []
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.kids_bedtime
+  mode: single
+
+- id: kids_bedtime_off
+  alias: Kids - Bedtime OFF (restore streaming apps)
+  description: Turns off input_boolean.kids_bedtime at 06:00 every day
+  triggers:
+  - trigger: time
+    at: "06:00:00"
+  conditions: []
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.kids_bedtime
   mode: single

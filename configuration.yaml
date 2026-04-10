@@ -14,19 +14,37 @@ http:
   trusted_proxies:
     - 192.168.30.15    # The IP of your Nginx Proxy Manager
 
-lovelace:
-  mode: yaml
-input_select:
-  presence_jackie:
-    name: Jackie
-    options:
-      - Home
-      - Not Home
-      - "Timeout (Home)"
-      - "Timeout (Not Home)"
-    initial: "Not Home"
-    icon: mdi:account
+# lovelace: block removed 2026-04-09 — YAML dashboard setup was dead weight.
+# All 3 HACS resources (mushroom, card-mod, mini-media-player) are already
+# registered in the UI-managed lovelace_resources storage. All real dashboards
+# (rooms, clamdigger-cineplex, circuits, jackie, clamlings) are storage-mode.
+# See ideas/2026-04-09-lovelace-dashboard-cleanup.md + cleanup-diff.md.
+# Bedtime gate for the /clamlings kids dashboard. ON between 20:30 and 06:00
+# (toggled by automation). When ON, the streaming-app picture buttons on the
+# kids dashboard gray out via card visibility conditions; d-pad / volume /
+# power / find-remote stay reachable so they can finish what's playing.
+input_boolean:
+  kids_bedtime:
+    name: Kids Bedtime
+    icon: mdi:weather-night
 
+# Roku ECP (External Control Protocol) deep links for the kids dashboard
+# content preset buttons. Each command launches the Plex Roku channel
+# (channel ID 13535) and passes a contentID + MediaType so the Plex client
+# jumps straight into the named show. Two endpoints — one per Roku — keyed
+# by the IPs from the device registry.
+rest_command:
+  roku_living_play_plex:
+    url: "http://192.168.40.234:8060/launch/13535?contentID={{ key }}&MediaType=show"
+    method: POST
+  roku_bedroom_play_plex:
+    url: "http://192.168.40.129:8060/launch/13535?contentID={{ key }}&MediaType=show"
+    method: POST
+
+input_select:
+  # Jackie's presence is now driven by person.jackie_ciarletta (phone trackers)
+  # — input_select.presence_jackie was retired 2026-04-09. Chris and Callie
+  # still use the Frigate-toggled state machine until they have phones registered.
   presence_chris:
     name: Chris
     options:
