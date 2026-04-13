@@ -1,6 +1,6 @@
 # BACKLOG — Home Assistant (Theatre Automation)
 # Version: n/a
-# Last Updated: 2026-04-09
+# Last Updated: 2026-04-13
 # Managed by: Prometheus
 # NOTE: This file lives at config/BACKLOG.md (persistent). Earlier this file
 # was at ~/projects/home-assistant/BACKLOG.md (ephemeral on HA OS overlay)
@@ -34,8 +34,8 @@
 - [ ] **Receiver input presets** — Automations for common configurations: Movie (HDMI1 + Dolby), Gaming (HDMI2 + Game Mode), Music (streaming + stereo). **Covered by Theatre Mode design.**
 - [ ] **Goodnight/shutdown script** — One-touch: projector off, receiver off, Shield sleep, all lights off, blinds open. **Covered by Theatre Mode design (`theatre_movie_mode_end`).**
 - [ ] **Theatre Shield media integration** — Re-enable play/stop/dim automations (exist in DB but removed from active YAML; need review and consolidation)
-- [ ] **Eddie "Welcome Home" jazz automation** — Currently broken, calls `media_player.play_media` with `media_content_id: muted jazz` (not a valid Cast media id; silently fails). **Decision: Cast Jazz24 / SomaFM stream to Nest Mini** — see `ideas/2026-04-09-eddie-welcome-music.md`. (audit 2026-04-09 §2)
-- [ ] **Chris/Callie phone-based presence** — Both are still on Frigate face-recognition + 4hr-timeout state machine. Decision needed: do they have phones with HA Companion app installed? If yes, switch to phone trackers like Jackie. If no, the Frigate setup is the best option. (audit 2026-04-09 §6)
+- [-] **REMOVE Eddie "Welcome Home" jazz automation** — Was fixed 2026-04-09 to use SomaFM Groove Salad and currently works, but **Eddie's decision 2026-04-13: remove it entirely**. Delete `facial_recognition_eddie_home` automation from `automations.yaml`. Pending Oracle Protocol plan + approval before edit.
+- [x] **Chris/Callie phone-based presence — DECIDED 2026-04-13: stay on Frigate.** Kids do not have phones with HA Companion. Current face-recognition + 4hr-timeout state machine is the correct approach. Intentional fragility per §9 Footguns. **Close as by-design.**
 - [x] **CLAUDE.md inside HA config** — Document devices, zones, room layout, theatre device chain so future sessions don't have to guess context. **(SHIPPED 2026-04-09 — `config/CLAUDE.md`, 606 lines)**
 
 ## PATCH
@@ -43,12 +43,12 @@
 - [ ] **Projector input switching** — Only power on/off is automated via Sofabaton; add input selection commands
 - [ ] **Backup automations.yaml.bak** — Stale backup file from earlier iteration; archive or remove
 - [ ] **Clamdigger Cineplex theme** — Custom UI theme exists but verify it's applied and rendering correctly on theatre dashboard
-- [ ] **Emporia Vue energy monitoring** — Integration in `setup_error` state ("Failed to login"). Source of ~50 unavailable energy sensors. **Verdict: FIX** — re-auth via Settings → Devices & Services → Emporia Vue → Reconfigure. See `ideas/2026-04-09-emporia-vue-decision.md`. (audit 2026-04-09 §3)
+- [x] **2026-04-13** — **Emporia Vue energy monitoring** — Integration has SELF-RECOVERED. Entry state is `loaded`, all 60 energy entities healthy (`sensor.main_panel_*`, `sensor.accu_*`, `sensor.it_*`, `sensor.balance_*`, etc.). No reconfigure was needed. `/dashboard-circuits` should render again; verify next time Eddie loads it.
 - [ ] **Lovelace dashboard cleanup** — Two dashboards titled "Overview". **Verdict: GO WITH ONE-LINE FIX** — patch storage Overview's stale `input_select.presence_jackie` reference first, then delete `ui-lovelace.yaml` + the `lovelace:` block. See `ideas/2026-04-09-lovelace-dashboard-cleanup.md` and `ideas/2026-04-09-lovelace-cleanup-diff.md`. (audit 2026-04-09 §5)
-- [ ] **Reolink chime stale entity cleanup** — 5 unavailable entities for what looks like a disconnected chime device (`select.reolink_chime_*`, `number.reolink_chime_*`, `switch.reolink_chime_led`). Working chimes have proper room-prefixed names. Identify the orphan device in Settings → Devices and remove it. (audit 2026-04-09)
+- [ ] **Reolink chime stale entity cleanup** — 7 unavailable entities confirmed 2026-04-13 for a disconnected chime device (no-room-prefix: `number.reolink_chime_volume`, `number.reolink_chime_silent_time`, `select.reolink_chime_{motion,person,vehicle,visitor}_ringtone`, `switch.reolink_chime_led`). Working chimes have room-prefixed names (livingroom, office, theatre, master_bedroom). Identify the orphan device in Settings → Devices and remove it.
 - [ ] **Reolink siren entities** — `siren.front_door_siren` and `siren.back_door_siren` are unavailable; Reolink may not expose this on these camera models. Disable the entities or remove. (audit 2026-04-09)
 - [ ] **Projector state source of truth** — Basement lighting automation triggers off both `media_player.epson_projector` AND `remote.epson_projector`. Pick one and remove the other from the trigger list. (audit 2026-04-09)
-- [ ] **Restart HA to clear stale entity registry entries** — 4 stale entries removed from `.storage/core.entity_registry` on 2026-04-09 (game_room_night_light, theatre_unified_light_control, presence_jackie_ciarletta_arrived_home, switch.theatre_controls). File edited but full HA restart needed for the change to be observable in Settings → Devices & Services. **One-time action — clear after next restart.**
+- [ ] **Clear 4 stale registry entries (storage-edit approach FAILED)** — Confirmed 2026-04-13 that the 2026-04-09 `.storage/core.entity_registry` hand-edit did not stick; all 4 entries still present in `unavailable` state: `automation.game_room_night_light`, `automation.theatre_unified_light_control`, `automation.presence_jackie_ciarletta_arrived_home`, `switch.theatre_controls`. HA was almost certainly running during the edit and re-serialized the file. **New approach needed:** remove via Settings → Devices & Services UI (per-entity "Delete"), OR stop HA → edit → restart. Prefer UI path.
 - [ ] **HA area registry cleanup** — Registry has wrong/stale entries: Callie Bedroom is on `basement` floor (should be 1st floor), Guest Bedroom exists on 1st_floor (should be deleted — there is no guest room), Chris Bedroom is on `garage` floor (verify intentional). Cleanup pending Eddie's confirmation on Chris. (discovered 2026-04-09 while writing CLAUDE.md)
 - [ ] **Migrate ideas/ + BACKLOG to persistent path** — Files should live at `config/ideas/` and `config/BACKLOG.md`, not `~/projects/home-assistant/{ideas,BACKLOG.md}` (which is the HA OS root tmpfs overlay and gets wiped on every HA OS update). Migration done 2026-04-09 after data loss event. Daedalus SSHFS mount may also want to be re-pointed at `/config` instead of `/` for cleanliness. (incident 2026-04-09)
 
@@ -70,3 +70,4 @@
 - [x] **2026-04-09** — **Orphaned input_select.presence_jackie removed** — Stripped from configuration.yaml after the Jackie phone-tracking rework made it dead.
 - [x] **2026-04-09** — **Clamlings kids dashboard scaffold** — `/clamlings` storage dashboard with two views (Living Room + Bedroom), 28 cards each, full Roku controls, Plex deep-link rest_commands, bedtime gate via `input_boolean.kids_bedtime` + automations at 20:30 / 06:00. Awaits HA restart to register.
 - [x] **2026-04-09** — **HA CLAUDE.md documentation** — `config/CLAUDE.md` written by documentation agent (606 lines) covering house layout, theatre chain, integrations, automations, footguns, common task recipes. Patched for Callie's room being first floor (HA area registry has it wrong).
+- [x] **2026-04-13** — **State audit refresh** — Verified Emporia Vue self-recovered (60 entities healthy), confirmed 4 stale registry entries still present (storage edit didn't stick), counted 7 Reolink orphan chime entities (was 5), total unavailable entities down from 94 → 74. Three decisions locked in: Emporia = no-op complete, Welcome Home jazz = remove, Chris/Callie presence = stay on Frigate (by design).
